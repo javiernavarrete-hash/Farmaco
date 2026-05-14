@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruleta de Farmacología - Modo Estudio</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
+        
+        .container {
+            background-color: #fff;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            max-width: 650px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Estilos del panel de filtros */
+        .filter-section {
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+            display: none; /* Oculto por defecto */
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            padding-right: 10px;
+        }
+        .filter-label {
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .filter-label input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        .filter-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            border-top: 1px solid #bdc3c7;
+            padding-top: 10px;
+        }
+        .btn-small {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .btn-small:hover { background-color: #7f8c8d; }
+        .btn-apply { background-color: #34495e; }
+        .btn-apply:hover { background-color: #2c3e50; }
+
+        .btn-toggle-filters {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .btn-toggle-filters:hover { background-color: #2980b9; }
+
+        /* Estilos de la Ruleta */
+        .roulette-box {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+            margin: 20px 0;
+            padding: 20px;
+            border: 3px dashed #3498db;
+            border-radius: 10px;
+            background-color: #ebf5fb;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .main-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 10px;
+        }
+        .main-btn:hover { background-color: #c0392b; }
+        .main-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        
+        .question-section {
+            margin-top: 30px;
+            display: none;
+            padding: 20px;
+            background-color: #fef9e7;
+            border-left: 5px solid #f1c40f;
+            border-radius: 5px;
+        }
+        .question-text {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #d35400;
+        }
+        .answer-text {
+            font-size: 1.1em;
+            color: #27ae60;
+            font-weight: bold;
+            margin-top: 15px;
+            display: none;
+            text-align: left;
+            white-space: pre-line;
+            background: #eafaf1;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .btn-answer { background-color: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 1em; cursor: pointer; }
+        .btn-answer:hover { background-color: #27ae60; }
+        .counter { margin-top: 15px; font-size: 0.9em; color: #95a5a6; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>💊 Ruleta Farmacológica</h1>
+        <p class="subtitle">Modo de estudio sin pistas de categoría.</p>
+        
+        <button class="btn-toggle-filters" onclick="toggleFilters()">⚙️ Configurar Familias a Estudiar</button>
+
+        <div class="filter-section" id="filterSection">
+            <strong>Selecciona las familias que deseas incluir:</strong>
+            <div class="filter-grid" id="filterGrid">
+                </div>
+            <div class="filter-controls">
+                <div>
+                    <button class="btn-small" onclick="selectAll(true)">Seleccionar Todas</button>
+                    <button class="btn-small" onclick="selectAll(false)">Desmarcar Todas</button>
+                </div>
+                <button class="btn-small btn-apply" onclick="applyFilters()">Aplicar y Cerrar</button>
+            </div>
+        </div>
+
+        <div class="roulette-box" id="drugDisplay">
+            <span>¿Qué fármaco tocará?</span>
+        </div>
+
+        <button class="main-btn" id="spinBtn" onclick="spinRoulette()">Girar Ruleta</button>
+
+        <div class="question-section" id="questionSection">
+            <div class="question-text" id="questionText"></div>
+            <button class="btn-answer" id="answerBtn" onclick="showAnswer()">Revelar Respuesta</button>
+            <div class="answer-text" id="answerText"></div>
+        </div>
+        
+        <div class="counter" id="counterText"></div>
+    </div>
+
+    <script>
+        const rawData = [
+            { nombres: ["Acetazolamida", "Diclorfenamida", "Metazolamida", "Dorzolamida", "Brinzolamida"], categoria: "Diuréticos: Inhibidores de la anhidrasa carbónica", "Mecanismo de acción": "Inhibición de la anhidrasa carbónica en PCT. Inhibe deshidratación de H2CO3 e hidratación en luz tubular de C02 en citoplasma.", "Efectos": "Disminuye reabsorción de HCO3 causando diuresis. Disminuye secreción de humor acuoso disminuyendo PIO. Disminuye secreción de LCF. Mayor reabsorción de NaCl.", "Uso clínico": "Glaucoma, alcalinización de la orina, hidratación en alcalosis metabólica, mal de montaña agudo, Epilepsia, Reducir PIC, Hiperfosfatemia grave, Kleine Levin.", "Farmacocinética/Efectos adversos": "Acidosis metabólica hiperclorémica, cálculos renales, hipopotasemia, hiperamonemia somnolencia, parestesias.", "Extra": "Tópicos para el glaucoma sin efectos sistémicos" },
+            { nombres: ["Dapagliflozina", "Canagliflozina", "Empagliflozina", "Ertugliflozina", "Ipragliflozina", "Sotagliflozina"], categoria: "Diuréticos: Inhibidores SLGT2", "Mecanismo de acción": "Inhibición del cotransportador de Na y Glucosa SLGT2 en PCT. (Sotagliflozina inhibe SLGT1 y SLGT2)", "Efectos": "-Disminuye reabsorción de Na y Glucosa\n-Disminuye niveles séricos de Glucosa\n-Diuresis leve\n-PROMUEVE ERITROPOYETINA (mejora anemia)", "Uso clínico": "Diabetes Mellitus, IC FEr.", "Farmacocinética/Efectos adversos": "Contraindicado en Enfermedad renal o hepática grave, pérdida de peso, caída de PS, Lesión renal aguda, ITU, infección micótica, Cetoacidosis diabética, Gangrena de Fournier.", "Extra": "Rifampicina disminuye exposición (dapa). Bloqueo eje RAA = menor biodisponibilidad del SLGT2." },
+            { nombres: ["Furosemida", "Ácido etacrínico", "Bumetanida", "Torsemida"], categoria: "Diuréticos de Asa", "Mecanismo de acción": "Inhibición del transportador de Na/K/2CL en TAL.", "Efectos": "Incremento de excreción de Na, Pérdida de K, Pérdida de cationes divalentes (Ca, Mg). Inducen expresión de COX2.", "Uso clínico": "Edema agudo de pulmón, Edema periférico IC, hipercalcemia, hiperpotasemia, IRA, Sobredosis de aniones.", "Farmacocinética/Efectos adversos": "Alcalosis metabólica hipopotasémica, Ototoxicidad, Hiperuricemia, Hipomagnesemia, Hipersensibilidad (sulfonamidas), DRESS.", "Extra": "Se elimina en riñones, pseudoporfiria, fracturas, NSAID = NO." },
+            { nombres: ["Hidroclorotiazida", "Clorotiazida", "Clortalidona", "Metolazona", "Indapamida", "Hidroflumetiazida", "Bendroflumetiazida", "Politiazida", "Quinetazona"], categoria: "Diuréticos: Tiazidas", "Mecanismo de acción": "Inhibición del transportador NaCl en DCT.", "Efectos": "Aumenta excreción de NaCl, Pérdida de K, Aumento de reabsorción de Ca. Inhibe liberación de Insulina.", "Uso clínico": "Hipertensión, IC, Nefrolitiasis por hipercalciuria, Diabetes insípida nefrogénica, HTA nocturna (Indapamida y Clortalidona).", "Farmacocinética/Efectos adversos": "Alcalosis metabólica hipopotasémica, Intolerancia a carbohidratos, Hiperlipidemia, Hiponatremia, Gota, Hipersensibilidad, Hipomagnesemia, Debilidad, fatiga.", "Extra": "Lupus, SDRA. Clortalidona: Larga vida 1/2 por unión a GR." },
+            { nombres: ["Espironolactona", "Eplererona"], categoria: "Diuréticos: Ahorradores de K (Antagonistas de aldosterona)", "Mecanismo de acción": "Antagonistas de los receptores de mineralocorticoides de aldosterona en Túbulos Colectores.", "Efectos": "Reducen absorción de Na, Reducen pérdida de K, Inhiben receptores de andrógenos (espironolactona).", "Uso clínico": "Hiperaldosteronismo primario y secundario, Hipopotasemia secundaria, Infarto Posmiocardico, ICC.", "Farmacocinética/Efectos adversos": "Hiperpotasemia, Acidosis metabolica Hipercloremica. Ginecomastia, libido disminuida (espironolactona).", "Extra": "Efecto hipotensor, Eplererona tiene mayor selectividad mineralocorticoide." },
+            { nombres: ["Finerenona", "Esaxerenona", "Canrenona", "DSR-71167", "Amilorida", "Triamtereno"], categoria: "Diuréticos: Ahorradores de K (Otros / ENaC)", "Mecanismo de acción": "Bloquea canales epiteliales de Na en Túbulos Colectores (Amilorida/Triamtereno). Antagonistas no esteroideos (Finerenona/Esaxerenona).", "Efectos": "Reducen absorción de Na y pérdida de K.", "Uso clínico": "ICC Fe Deprimida (Finerenona), Hipopotasemia Secundaria a otros diuréticos, Disminuye poliuria de Litio, Sx de Liddle.", "Farmacocinética/Efectos adversos": "Cálculos renales e IRA (triamtereno), Hiperpotasemia.", "Extra": "Finerenona se acumula en corazón (cardioprotección). Esaxerenona reduce albuminuria en DMT2." },
+            { nombres: ["Manitol"], categoria: "Acuaréticos", "Mecanismo de acción": "Efecto osmótico físico al impedir reabsorción normal del agua en PCT y Asa descendente Henle.", "Efectos": "Promueve diuresis acuosa, Disminución de PIO y PIC. Hiponatremia inicial, luego hipernatremia.", "Uso clínico": "IR por aumento de carga de solutos (Rabdomiólisis), Glaucoma, PIC aumentada.", "Farmacocinética/Efectos adversos": "Expansión del volumen extracelular, hiponatremia, Deshidratación, hiperpotasemia, Náuseas, vómitos." },
+            { nombres: ["Conivaptán", "Tolvaptán", "Lixivaptán", "Mozavaptán", "Satavaptán"], categoria: "Vaptanes", "Mecanismo de acción": "Antagonistas en receptores V1a y V2 de ADH (Conivaptán) o selectivos V2.", "Efectos": "Inhiben ADH en túbulo colector, Reducen reabsorción de agua, Aumenta concentración plasmática de Na.", "Uso clínico": "SIADH, Hiponatremia, IC, Enf Renal poliquística.", "Farmacocinética/Efectos adversos": "Diabetes insípida nefrogénica, IR, Boca seca, Sed, Poliuria, Hipernatremia.", "Extra": "Conivaptán es IV, Tolvaptán es Oral." },
+            { nombres: ["Captopril", "Lisinopril", "Enalapril", "Benazepril", "Fosinopril", "Moexipiril", "Perindopril", "Quinapril", "Ramipiril", "Trandolapril"], categoria: "Antihipertensivos: IECAS", "Mecanismo de acción": "Inhiben a la ACE. Todos prodrogas excepto Capto y Lisino.", "Efectos": "Reducen concentración de ATII, vasoconstricción y secreción de aldosterona. Aumentan Bradicinina (Vía calicreína - cinina).", "Uso clínico": "HTA, IR crónica (disminuyen proteinuria), Diabetes, IC, Infarto postmiocardico.", "Farmacocinética/Efectos adversos": "Hipotensión grave, IRA, Hiperkalemia, Tos seca, sibilancias, angioedema. Contraindicados en embarazo. Captopril da neutropenia y rash.", "Extra": "No hay respuesta simpática refleja." },
+            { nombres: ["Losartán", "Valsartán", "Azilsartán", "Cardesartán", "Eprosartán", "Irbesartán", "Olmesartán", "Telmisartán"], categoria: "Antihipertensivos: ARAS II", "Mecanismo de acción": "Bloqueadores del receptor de AT II tipo 1 (AT1).", "Efectos": "Reducen concentración de ATII, vasoconstricción y secreción de aldosterona. Más completos que IECAS.", "Uso clínico": "HTA, IR crónica, Diabetes, IC, Infarto postmiocardico.", "Farmacocinética/Efectos adversos": "Hipotensión grave, IRA, Hiperkalemia, Tos seca, angioedema (raro). Contraindicados en embarazo.", "Extra": "No hay respuesta simpática refleja. Valsartán es más afín para AT1." },
+            { nombres: ["Hidralazina", "Nitroprusiato de Na", "Minoxidil", "Diazóxido", "Fenoldopam"], categoria: "Vasodilatadores", "Mecanismo de acción": "Liberan NO del endotelio (Hidralazina, Nitroprusiato). Minoxidil/Diazóxido hiperpolarizan por canales de K. Fenoldopam es Agonista D1.", "Efectos": "Vasodilatación de arteriolas (y venas en Nitroprusiato).", "Uso clínico": "HTA, Emergencias HTA, IC, Alopecia (tópico Minoxidil), Hipoglicemia (Diazóxido).", "Farmacocinética/Efectos adversos": "Taquicardia Refleja, Cefaleas, Acumulación de Cianuro (Nitroprusiato), Lupus (Hidralazina), Hipertricosis (Minoxidil)." },
+            { nombres: ["Amlodipina", "Felodipina", "Isradipina", "Nicardipina", "Nifedipina", "Nimodipina", "Nisoldipina", "Nitrendipina", "Clevidipina"], categoria: "Bloqueantes Ca (Dihidropiridínicos)", "Mecanismo de acción": "Bloqueo de canales de Ca de tipo L (Vasos > Corazón).", "Efectos": "Disminuye RVP, Relajación Músculo Liso GI, Bronquial, Uterino. Nimodipina disminuye espasmo de vasos cerebrales.", "Uso clínico": "HTA, Angina, Cardiopatía hipertrófica, Migraña, Fenómeno de Raynaud.", "Farmacocinética/Efectos adversos": "Bradicardia, Hipotensión, Bloqueo aurículoventricular, Paro cardiaco.", "Extra": "Nimodipina es selectivo en vasos cerebrales." },
+            { nombres: ["Verapamilo", "Diltiazem"], categoria: "Bloqueantes Ca (No dihidropiridínicos)", "Mecanismo de acción": "Bloqueo no selectivo de canales de Ca tipo L en vasos y corazón.", "Efectos": "Disminuye RVP, FC, GC, demanda de O2. Inhibe canales de K en músculo liso vascular.", "Uso clínico": "HTA, Angina, Taquiarritmias supraventriculares.", "Farmacocinética/Efectos adversos": "Insuficiencia cardiaca, Enrojecimiento, Mareos, Náuseas, Constipación, Edema periférico.", "Extra": "Hiperplasia Gingival (Verapamilo), Estreñimiento." },
+            { nombres: ["Metildopa", "Guanabenz", "Guanfacina", "Clonidina"], categoria: "Simpaticolíticos centrales", "Mecanismo de acción": "Agonistas a2. Inhiben adenil ciclasa.", "Efectos": "Frena liberación de Norepi. Disminuye RVP, FC, GC.", "Uso clínico": "HTA, HTA en embarazo, Abstinencia de drogas (Clonidina).", "Farmacocinética/Efectos adversos": "Sedación, Boca seca, Vértigo, Galactorrea, Test de Coombs + (Metildopa), HTA de rebote." },
+            { nombres: ["Guanetidina", "Guanadrel", "Betanidina", "Debrisoquina", "Reserpina"], categoria: "Bloqueantes adrenérgicos presinápticos", "Mecanismo de acción": "Inhibe VAMP/SNAP o bloquea transporte de aminas a vesículas (Reserpina).", "Efectos": "Inhiben liberación de Norepi desde terminaciones nerviosas.", "Uso clínico": "HTA.", "Farmacocinética/Efectos adversos": "Hipotensión postural, Eyaculación retrasada, Diarrea. Reserpina da depresión psiquiátrica y parkinsonismo." },
+            { nombres: ["Fenoxibenzamina", "Fentolamina", "Prazosina", "Doxazosina", "Terazosina", "Tamsulosina", "Silodosina", "Alfuzosina"], categoria: "Alfa Bloqueantes", "Mecanismo de acción": "Bloqueo a1 y a2 (Fenoxibenzamina irreversible, Fentolamina competitivo). Los demás son selectivos a1 o a1A.", "Efectos": "Baja PA, Relaja musculo liso próstata.", "Uso clínico": "Feocromocitoma, HTA, HPB (Hiperplasia Prostática Benigna).", "Farmacocinética/Efectos adversos": "Hipotensión ortostática, Taquicardia, Arritmias, IFIS (Tamsulosina/Silodosina)." },
+            { nombres: ["Propanolol", "Nadolol", "Sotalol", "Timolol", "Pindolol", "Atenolol", "Bisoprolol", "Esmolol", "Nebivolol", "Metoprolol", "Carvedilol", "Labetalol"], categoria: "Beta Bloqueantes", "Mecanismo de acción": "Antagonistas B1/B2 (no selectivos) o B1 selectivos (Atenolol, Bisoprolol). Algunos con bloqueo a1 extra (Carvedilol, Labetalol).", "Efectos": "Disminuye FC y PA, Disminuye renina.", "Uso clínico": "HTA, Angina, post IAM, Arritmias, Glaucoma crónico (Timolol), Hipertiroidismo.", "Farmacocinética/Efectos adversos": "Bradicardia, Fatiga, Broncoespasmo (no selectivos), Disfunción sexual, Sx de rebote." },
+            { nombres: ["Lovastatina", "Atorvastatina", "Fluvastatina", "Pravastatina", "Simvastatina", "Rosuvastatina", "Pitavastatina"], categoria: "Hipolipemiantes: Estatinas", "Mecanismo de acción": "Inhiben Reductasa HMG-CoA (hidroximetilglutaril-coenzima A).", "Efectos": "Reducen síntesis de colesterol, Reduce LDL, Reduce TGC, Up regulation LDLR. Disminuyen estrés oxidativo.", "Uso clínico": "Dislipidemia, Hipercolesterolemia, Enf vascular Aterosclerótica, Sx coronario Agudo.", "Farmacocinética/Efectos adversos": "↑ Aminotransferasas, ↑ CK (Rabdomiólisis, miositis), Lupus Like. No en Lactancia/Embarazo.", "Extra": "Rosuvastatina es la más potente." },
+            { nombres: ["Gemfibrozilo", "Fenofibrato", "Bezafibrato"], categoria: "Hipolipemiantes: Fibratos", "Mecanismo de acción": "Agonistas del receptor activado por proliferadores de peroxisomas Alfa (PPAR-a).", "Efectos": "↑ LPL, ↑ Apo A-I, ↓ Apo C-III, ↑Oxidación de A.G., ↓VLDL, ↑HDL.", "Uso clínico": "Hipertrigliceridemia.", "Farmacocinética/Efectos adversos": "Erupciones cutáneas, Síntomas GI, Cálculos biliares de Colesterol, Miositis si se usa con estatinas." },
+            { nombres: ["Penicilina G", "Penicilina V", "Nafcilina", "Oxacilina", "Ampicilina", "Amoxicilina", "Piperacilina"], categoria: "Antibióticos: Penicilinas", "Mecanismo de acción": "Inhiben el crecimiento bacteriano al interferir con reacción de transpeptidación de la síntesis de pared celular bacteriana.", "Efectos": "Bactericidas.", "Uso clínico": "Infecciones por streptococcus, neurosífilis, MSSA (Naf/Oxa), enterobacterias (Ampi/Amoxi), Pseudomona (Piperacilina).", "Farmacocinética/Efectos adversos": "Hipersensibilidad, anafilaxia, Erupción cutánea, Nefritis intersticial." },
+            { nombres: ["Cefazolina", "Cefalexina", "Cefuroxima", "Cefotaxima", "Ceftriaxona", "Ceftazidima", "Cefepime", "Ceftarolina"], categoria: "Antibióticos: Cefalosporinas", "Mecanismo de acción": "Inhiben síntesis de pared celular (transpeptidación).", "Efectos": "Bactericida. De 1ra gen (Gram+) a 3ra/4ta gen (Gram- amplio y Pseudomona). 5ta gen (Ceftarolina) ataca MRSA.", "Uso clínico": "Profilaxis Qx (Cefazolina), Neumonía, Meningitis (Ceftriaxona), Sepsis.", "Farmacocinética/Efectos adversos": "Hipersensibilidad, Anafilaxia, Efecto DISULFIRAM (algunas), Nefrotoxicidad." },
+            { nombres: ["Imipenem-cilastatina", "Doripenem", "Ertapenem", "Meropenem"], categoria: "Antibióticos: Carbapenémicos", "Mecanismo de acción": "Inhiben síntesis de pared celular bacteriana.", "Efectos": "Bactericida de muy amplio espectro (Gram +, Gram -, anaerobios y Pseudomona, excepto Ertapenem).", "Uso clínico": "Infecciones graves, organismos resistentes a otros ATB.", "Farmacocinética/Efectos adversos": "Convulsiones (más con Imipenem), Náuseas, Vómitos.", "Extra": "Imipenem se inactiva por dehidropeptidasas renales = se usa con Cilastatina." },
+            { nombres: ["Vancomicina", "Teicoplanina"], categoria: "Antibióticos: Glucopéptidos", "Mecanismo de acción": "Inhibe síntesis de pared celular al unirse al extremo D-Ala-D-Ala del peptidoglicano (transglicosilación).", "Efectos": "Bactericida contra Gram +.", "Uso clínico": "Inf por Gram +, MRSA, Colitis por C. Difficile (VO).", "Farmacocinética/Efectos adversos": "Sx del Hombre Rojo (infusión rápida), Ototoxicidad, Nefrotoxicidad." },
+            { nombres: ["Tetraciclina", "Doxiciclina", "Minociclina", "Tigeciclina"], categoria: "Antibióticos: Tetraciclinas", "Mecanismo de acción": "Inhiben síntesis de proteínas al unirse a subunidad 30s ribosomal.", "Efectos": "Bacteriostáticas. Amplio espectro.", "Uso clínico": "Rickettsias, Clamidia, Micoplasma, Enfermedad de Lyme, Acné.", "Farmacocinética/Efectos adversos": "Teratogénico (dientes/huesos), Alteran flora GI, Fotosensibilidad, Sx de Fanconi." },
+            { nombres: ["Eritromicina", "Claritromicina", "Azitromicina"], categoria: "Antibióticos: Macrólidos", "Mecanismo de acción": "Inhiben síntesis de proteínas al unirse a subunidad 50s ribosomal.", "Efectos": "Bacteriostáticos.", "Uso clínico": "Neumonía de comunidad, H pylori (Clari), Inf por clamidia.", "Farmacocinética/Efectos adversos": "Prolongan QT, Náuseas, Vómitos. Eritromicina/Claritromicina inhiben CYP450." },
+            { nombres: ["Gentamicina", "Amikacina", "Tobramicina", "Estreptomicina"], categoria: "Antibióticos: Aminoglucósidos", "Mecanismo de acción": "Inhiben síntesis de proteínas al unirse a subunidad 30s ribosomal.", "Efectos": "Bactericida rápido, concentración dependiente, Efecto Post-ATB.", "Uso clínico": "Infecciones graves por Gram- aerobias (Pseudomona, Enterobacterias).", "Farmacocinética/Efectos adversos": "Nefrotoxicidad, Ototoxicidad, Bloqueo Neuromuscular." },
+            { nombres: ["Ciprofloxacino", "Levofloxacino", "Moxifloxacino"], categoria: "Antibióticos: Fluoroquinolonas", "Mecanismo de acción": "Inhibición de ADN Topoisomerasa II (Adn Girasa) y Topoisomerasa IV.", "Efectos": "Bactericida. Top II=Gram -, Top IV=Gram +.", "Uso clínico": "ITU, Diarrea Bacteriana, Neumonías (Levo/Moxi).", "Farmacocinética/Efectos adversos": "Fotosensibilidad, Prolongación QT, Tendinitis (Ruptura). No en <18 años." },
+            { nombres: ["Trimetoprim-Sulfametoxazol", "Sulfadiazina"], categoria: "Antibióticos: Sulfonamidas", "Mecanismo de acción": "Análogos de PABA, inhiben Dihidropteroato sintasa y Dihidrofolato reductasa (Sinergia).", "Efectos": "Bactericida por inhibición de purinas/ADN.", "Uso clínico": "Neumonía por Pneumocystis, Toxoplasmosis, ITU.", "Farmacocinética/Efectos adversos": "Sx de Steven Johnson, Kernicterus, Cristaluria, Anemia hemolítica en déficit G6PD." },
+            { nombres: ["Hidrocortisona", "Prednisona", "Dexametasona", "Betametasona"], categoria: "Glucocorticoides", "Mecanismo de acción": "Inhibición indirecta de Fosfolipasa A2 por inducción de Lipocortina 1/Anexina 1. Inhibe F.T. Inflamatorios.", "Efectos": "Suprime migración leucocitaria, Antiinflamatorio e inmunosupresor profundo.", "Uso clínico": "Asma, Artritis, Anaflaxia, Colitis, Sx Nefrótico, Maduración pulmonar fetal (Dexa/Beta).", "Farmacocinética/Efectos adversos": "Sx de Cushing, Osteoporosis, DM, Úlceras Gástricas, Inmunosupresión, Glaucoma, Psicosis." },
+            { nombres: ["Aspirina", "Diclofenaco", "Ibuprofeno", "Naproxeno", "Ketorolaco", "Celecoxib", "Meloxicam"], categoria: "AINEs", "Mecanismo de acción": "Inhibidores COX1 y COX2 (Celecoxib selectivo COX2).", "Efectos": "Inhiben síntesis de PG (Prostaglandinas). Antiinflamatorios, analgésicos, antipiréticos.", "Uso clínico": "AR, Osteoartritis, Dolor, Fiebre, Gota aguda.", "Farmacocinética/Efectos adversos": "Nefrotoxicidad, Úlceras GI, Hemorragia, HTA." },
+            { nombres: ["Alopurinol", "Citrato de K", "D Penicilamina"], categoria: "Tratamiento de Gota y Cálculos", "Mecanismo de acción": "Alopurinol inhibe Xantino Oxidasa. Citrato alcaliniza pH.", "Efectos": "Disminuyen niveles de ácido úrico o previenen formación de cálculos.", "Uso clínico": "Gota crónica (Alopurinol), Cálculos renales.", "Farmacocinética/Efectos adversos": "Sx de Hipersensibilidad, Mielosupresión (Alopurinol)." }
+        ];
+
+        let allDrugsDespacked = [];
+        let activeDrugs = [];
+        const allowedHeaders = ["Mecanismo de acción", "Efectos", "Uso clínico", "Farmacocinética/Efectos adversos", "Extra"];
+
+        // 1. Inicialización
+        window.onload = () => {
+            // Desempaquetar
+            rawData.forEach(group => {
+                group.nombres.forEach(drugName => {
+                    let individualDrug = { ...group };
+                    individualDrug.nombre = drugName;
+                    delete individualDrug.nombres;
+                    allDrugsDespacked.push(individualDrug);
+                });
+            });
+
+            // Crear Filtros
+            const uniqueCategories = [...new Set(rawData.map(item => item.categoria))];
+            const filterGrid = document.getElementById("filterGrid");
+            
+            uniqueCategories.forEach((cat, index) => {
+                const label = document.createElement("label");
+                label.className = "filter-label";
+                label.innerHTML = `<input type="checkbox" class="cat-checkbox" value="${cat}" checked> ${cat}`;
+                filterGrid.appendChild(label);
+            });
+
+            updateActiveDrugs();
+        };
+
+        // Lógica de UI para filtros
+        function toggleFilters() {
+            const section = document.getElementById("filterSection");
+            section.style.display = section.style.display === "none" || section.style.display === "" ? "block" : "none";
+        }
+
+        function selectAll(check) {
+            document.querySelectorAll(".cat-checkbox").forEach(cb => cb.checked = check);
+        }
+
+        function applyFilters() {
+            updateActiveDrugs();
+            toggleFilters(); // Cerrar el panel
+        }
+
+        function updateActiveDrugs() {
+            const checkedCategories = Array.from(document.querySelectorAll(".cat-checkbox:checked")).map(cb => cb.value);
+            
+            activeDrugs = allDrugsDespacked.filter(drug => checkedCategories.includes(drug.categoria));
+            
+            const spinBtn = document.getElementById("spinBtn");
+            if (activeDrugs.length === 0) {
+                document.getElementById('counterText').innerText = `⚠️ Ninguna familia seleccionada. Selecciona al menos una.`;
+                spinBtn.disabled = true;
+            } else {
+                document.getElementById('counterText').innerText = `Actualmente hay ${activeDrugs.length} fármacos activos en la ruleta.`;
+                spinBtn.disabled = false;
+            }
+        }
+
+        // Lógica de Ruleta
+        let currentDrug = null;
+        let currentCharacteristic = "";
+
+        function spinRoulette() {
+            if (activeDrugs.length === 0) return;
+
+            const btn = document.getElementById("spinBtn");
+            const display = document.getElementById("drugDisplay");
+            const questionSection = document.getElementById("questionSection");
+            const answerText = document.getElementById("answerText");
+            
+            questionSection.style.display = "none";
+            answerText.style.display = "none";
+            btn.disabled = true;
+
+            let spins = 0;
+            const maxSpins = 25;
+            const intervalTime = 40; 
+
+            const spinInterval = setInterval(() => {
+                const randomVisualDrug = activeDrugs[Math.floor(Math.random() * activeDrugs.length)];
+                display.innerHTML = `<span>${randomVisualDrug.nombre}</span>`;
+                spins++;
+
+                if (spins >= maxSpins) {
+                    clearInterval(spinInterval);
+                    finalizeSpin();
+                    btn.disabled = false;
+                }
+            }, intervalTime);
+        }
+
+        function finalizeSpin() {
+            currentDrug = activeDrugs[Math.floor(Math.random() * activeDrugs.length)];
+            
+            // Cero pistas: Solo se muestra el nombre
+            document.getElementById("drugDisplay").innerHTML = `<span>${currentDrug.nombre}</span>`;
+
+            let availableHeaders = allowedHeaders.filter(header => currentDrug[header] && currentDrug[header].trim() !== "");
+            
+            if (availableHeaders.length > 0) {
+                currentCharacteristic = availableHeaders[Math.floor(Math.random() * availableHeaders.length)];
+                document.getElementById("questionText").innerText = `¿Cuál es su ${currentCharacteristic}?`;
+                document.getElementById("answerText").innerText = currentDrug[currentCharacteristic];
+                document.getElementById("questionSection").style.display = "block";
+            }
+        }
+
+        function showAnswer() {
+            document.getElementById("answerText").style.display = "block";
+        }
+    </script>
+</body>
+</html>
